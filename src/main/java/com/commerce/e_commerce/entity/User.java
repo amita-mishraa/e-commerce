@@ -2,6 +2,8 @@ package com.commerce.e_commerce.entity;
 
 import com.commerce.e_commerce.dto.UserDTO;
 import com.commerce.e_commerce.role.UserRole;
+
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -22,11 +24,10 @@ public class User {
 	
 	private String email;
 	
+	@Column(nullable = false)
 	private String password;
 	
 	private UserRole userRole;
-	
-	private byte[] img;
 	
 }
 

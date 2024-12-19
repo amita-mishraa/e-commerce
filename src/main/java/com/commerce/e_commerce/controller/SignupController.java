@@ -2,33 +2,42 @@ package com.commerce.e_commerce.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
 import com.commerce.e_commerce.dto.SignupDTO;
-import com.commerce.e_commerce.dto.UserDTO;
-import com.commerce.e_commerce.service.user.UserService;
+import com.commerce.e_commerce.entity.User;
+import com.commerce.e_commerce.repository.UserRepository;
+import com.commerce.e_commerce.role.UserRole;
 
 @RestController
 public class SignupController {
 
-	@Autowired
-	private UserService userService;
-	
-	@PostMapping("/sign-up")
-	public ResponseEntity<?> signup(@RequestBody SignupDTO signupDto){
-		if (userService.hasUserWithEmail(signupDto.getEmail())) {
-			return new ResponseEntity<>("User has already exist", HttpStatus.NOT_ACCEPTABLE);
-		}
-      UserDTO created = userService.createUser(signupDto);
-       if(created == null)
-       {
-    	   return new ResponseEntity<>("Not Created, Try Again!!", HttpStatus.BAD_REQUEST);
-       }
-    	   return new ResponseEntity<>(created, HttpStatus.CREATED);
-       
-	}
+    @Autowired
+    private UserRepository userRepository;
+
+    @PostMapping("/sign-up")
+    public ResponseEntity<?> signUp(@RequestBody SignupDTO signupDto) {
+   
+        if (userRepository.findFirstByEmail(signupDto.getEmail()) != null) {
+            return new ResponseEntity<>("User already exists", HttpStatus.CONFLICT);
+        }
+
+
+        if (signupDto.getUserRole() == UserRole.ADMIN && userRepository.countByUserRole(UserRole.ADMIN) >= 2) {
+            return new ResponseEntity<>("Cannot create more than 2 admins", HttpStatus.FORBIDDEN);
+        }
+
+        User user = new User();
+        user.setName(signupDto.getName());
+        user.setEmail(signupDto.getEmail());
+        user.setPassword(signupDto.getPassword());
+        user.setUserRole(signupDto.getUserRole() != null ? signupDto.getUserRole() : UserRole.USER); // Default to USER role if none provided
+
+        userRepository.save(user);
+
+        return new ResponseEntity<>("User created successfully", HttpStatus.CREATED);
+    }
 }
